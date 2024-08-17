@@ -1,21 +1,12 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::LazyLock};
 
-use color_eyre::eyre::eyre;
+pub static DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    let dirs = directories::BaseDirs::new().expect("Could not get base directories");
+    dirs.config_dir().join("bw-ssh-agent")
+});
 
-pub fn get_data_dir() -> color_eyre::Result<PathBuf> {
-    let dirs = directories::BaseDirs::new().ok_or(eyre!("Could not get base directories"))?;
+pub static SOCKET_PATH: LazyLock<PathBuf> = LazyLock::new(|| DATA_DIR.join("agent.sock"));
 
-    Ok(dirs.config_dir().join("bw-ssh-agent"))
-}
+pub static PID_PATH: LazyLock<PathBuf> = LazyLock::new(|| DATA_DIR.join("agent.pid"));
 
-pub fn get_socket_path() -> color_eyre::Result<PathBuf> {
-    get_data_dir().map(|d| d.join("agent.sock"))
-}
-
-pub fn get_pid_path() -> color_eyre::Result<PathBuf> {
-    get_data_dir().map(|d| d.join("agent.pid"))
-}
-
-pub fn get_database_path() -> color_eyre::Result<PathBuf> {
-    get_data_dir().map(|d| d.join("data.sqlite"))
-}
+pub static DATABASE_PATH: LazyLock<PathBuf> = LazyLock::new(|| DATA_DIR.join("data.sqlite"));

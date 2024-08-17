@@ -1,10 +1,10 @@
-use std::{str::FromStr, sync::Arc};
-
-use tokio::sync::Mutex;
+use core::str;
+use std::str::FromStr;
 
 use crate::{
     bitwarden::{
         config::{bw_get_config, BwConfig},
+        constants::get_bw_http_client,
         crypto::decrypt_with_master_key,
         sync::{bw_sync, CipherType},
     },
@@ -14,15 +14,13 @@ use crate::{
 
 const BW_EXPOSE_FIELD: &str = "desu.tei.bw-ssh-agent:expose";
 
-pub async fn do_sync(
-    database: Arc<Mutex<Database>>,
+pub async fn sync_keys(
+    database: &Database,
     client: &reqwest::Client,
     config: &BwConfig,
     symmetric_key: &[u8],
     auth: &AuthDto,
 ) -> color_eyre::Result<()> {
-    let database = database.lock().await;
-
     println!("Fetching from {}", config.environment.vault);
     let sync_result = bw_sync(client, config, &auth.access_token).await?;
 
@@ -48,14 +46,12 @@ pub async fn do_sync(
 
         let mut expose = false;
         for field in fields {
-            let name = String::from_utf8(decrypt_with_master_key(&symmetric_key, &field.name)?)?;
-            if name != BW_EXPOSE_FIELD {
+            if decrypt_with_master_key(symmetric_key, &field.name)? != BW_EXPOSE_FIELD.as_bytes() {
                 continue;
             }
 
-            let value = String::from_utf8(decrypt_with_master_key(&symmetric_key, &field.value)?)?;
-
-            if value == "1" || value == "true" {
+            let value = decrypt_with_master_key(symmetric_key, &field.value)?;
+            if value == b"1" || value == b"true" {
                 expose = true;
             }
         }
@@ -64,13 +60,12 @@ pub async fn do_sync(
             continue;
         }
 
-        let name = String::from_utf8(decrypt_with_master_key(&symmetric_key, &cipher.name)?)?;
         let Some(ref encrypted_private_key) = cipher.notes else {
             continue;
         };
         let private_key = String::from_utf8(decrypt_with_master_key(
-            &symmetric_key,
-            &encrypted_private_key,
+            symmetric_key,
+            encrypted_private_key,
         )?)?;
 
         let ssh_key = ssh_key::PrivateKey::from_str(&private_key)?;
@@ -80,6 +75,8 @@ pub async fn do_sync(
 
         let old = identities.iter().find(|i| i.id == cipher.id);
         let mut should_update = false;
+
+        let name = String::from_utf8(decrypt_with_master_key(symmetric_key, &cipher.name)?)?;
 
         if let Some(old) = old {
             if old.name != name || old.public_key != pub_key {
@@ -126,17 +123,13 @@ pub async fn do_sync(
     Ok(())
 }
 
-pub async fn cmd_sync(database: Arc<Mutex<Database>>) -> color_eyre::Result<()> {
-    let auth = {
-        let database = database.lock().await;
-        let Some(auth) = database.get_auth()? else {
-            println!("Not logged in. Please run `bw-ssh-agent login` first.");
-            return Ok(());
-        };
-        auth
+pub async fn cmd_sync(database: Database) -> color_eyre::Result<()> {
+    let Some(auth) = database.get_auth()? else {
+        println!("Not logged in. Please run `bw-ssh-agent login` first.");
+        return Ok(());
     };
 
-    let client = reqwest::Client::new();
+    let client = get_bw_http_client();
     let config = bw_get_config(&client, &auth.vault_url).await?;
 
     // todo: refresh token if expired
@@ -145,7 +138,7 @@ pub async fn cmd_sync(database: Arc<Mutex<Database>>) -> color_eyre::Result<()> 
     keychain.ensure_keypair().await?;
     let symmetric_key = keychain.decrypt_data(auth.symmetric_key.to_vec()).await?;
 
-    do_sync(database, &client, &config, &symmetric_key, &auth).await?;
+    sync_keys(&database, &client, &config, &symmetric_key, &auth).await?;
 
     Ok(())
 }

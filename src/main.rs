@@ -1,13 +1,9 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
-use std::{fs, sync::Arc};
+use std::fs;
 
 use clap::{command, Parser, Subcommand};
 use cmd::{daemon::cmd_daemon, list::cmd_list, login::cmd_login, sync::cmd_sync};
-use constants::get_data_dir;
+use constants::DATA_DIR;
 use database::Database;
-use tokio::sync::Mutex;
 
 pub mod agent;
 pub mod bitwarden;
@@ -50,23 +46,22 @@ async fn main() -> color_eyre::Result<()> {
 
     let cli = Cli::parse();
 
-    let data_dir = get_data_dir()?;
-    fs::create_dir_all(&data_dir)?;
+    fs::create_dir_all(&*DATA_DIR)?;
 
-    let database = Arc::new(Mutex::new(Database::open()?));
+    let database = Database::open()?;
 
     match cli.command {
         Commands::Daemon => {
-            cmd_daemon(database.clone()).await?;
+            cmd_daemon(database).await?;
         }
         Commands::Login { .. } => {
-            cmd_login(database.clone(), cli.command).await?;
+            cmd_login(database, cli.command).await?;
         }
         Commands::Sync => {
-            cmd_sync(database.clone()).await?;
+            cmd_sync(database).await?;
         }
         Commands::List => {
-            cmd_list(database.clone()).await?;
+            cmd_list(database)?;
         }
     };
 

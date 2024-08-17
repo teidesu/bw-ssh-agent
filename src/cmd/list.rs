@@ -1,12 +1,6 @@
-use std::sync::Arc;
-
-use tokio::sync::Mutex;
-
 use crate::database::Database;
 
-pub async fn cmd_list(database: Arc<Mutex<Database>>) -> color_eyre::Result<()> {
-    let database = database.lock().await;
-
+pub fn cmd_list(database: Database) -> color_eyre::Result<()> {
     let identities = database.get_identities()?;
 
     println!("{} identities:", identities.len());

@@ -1,8 +1,5 @@
-use std::sync::Arc;
-
 use color_eyre::eyre::eyre;
 use rustyline::DefaultEditor;
-use tokio::sync::Mutex;
 
 use crate::{
     bitwarden::{
@@ -11,17 +8,14 @@ use crate::{
         constants::{get_bw_http_client, BW_DEFAULT_VAULT_URL},
         crypto::{decrypt_with_master_key, hkdf_expand_key, make_master_key, make_master_key_hash},
     },
-    cmd::sync::do_sync,
+    cmd::sync::sync_keys,
     database::{AuthDto, Database},
     keychain::Keychain,
     utils::get_current_unix_timestamp,
     Commands,
 };
 
-pub async fn cmd_login(
-    database: Arc<Mutex<Database>>,
-    command: Commands,
-) -> color_eyre::Result<()> {
+pub async fn cmd_login(database: Database, command: Commands) -> color_eyre::Result<()> {
     let Commands::Login {
         email,
         password,
@@ -33,8 +27,11 @@ pub async fn cmd_login(
 
     let mut rl = DefaultEditor::new()?;
 
-    let email = email.unwrap_or_else(|| rl.readline("Email » ").unwrap());
-    let email = email.trim().to_ascii_lowercase();
+    let email = email
+        .unwrap_or_else(|| rl.readline("Email » ").unwrap())
+        .trim()
+        .to_ascii_lowercase();
+
     let password = password.unwrap_or_else(|| rl.readline("Password » ").unwrap());
 
     let vault_url = vault_url.unwrap_or(String::from(BW_DEFAULT_VAULT_URL));
@@ -87,15 +84,12 @@ pub async fn cmd_login(
         symmetric_key: encrypted_symmetric_key,
     };
 
-    {
-        let database = database.lock().await;
-        database.set_auth(&auth)?;
-    }
+    database.set_auth(&auth)?;
 
     println!("Logged in successfully!");
 
     println!("Syncing keys...");
-    do_sync(database, &client, &config, &symmetric_key, &auth).await?;
+    sync_keys(&database, &client, &config, &symmetric_key, &auth).await?;
 
     Ok(())
 }

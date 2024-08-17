@@ -1,19 +1,19 @@
 use std::sync::Arc;
 
-use tokio::{fs, net::UnixListener, sync::Mutex};
+use tokio::{fs, net::UnixListener};
 
 use crate::{
     agent::agent::Agent,
     cmd::utils::check_running,
-    constants::{get_pid_path, get_socket_path},
+    constants::{PID_PATH, SOCKET_PATH},
     database::Database,
     handler,
     keychain::Keychain,
 };
 
-pub async fn cmd_daemon(database: Arc<Mutex<Database>>) -> color_eyre::Result<()> {
-    let pipe = get_socket_path()?;
-    let pid_file = get_pid_path()?;
+pub async fn cmd_daemon(database: Database) -> color_eyre::Result<()> {
+    let pipe = &*SOCKET_PATH;
+    let pid_file = &*PID_PATH;
 
     if check_running().await? {
         println!("bw-ssh-agent is already running!");
@@ -39,7 +39,7 @@ pub async fn cmd_daemon(database: Arc<Mutex<Database>>) -> color_eyre::Result<()
     keychain.ensure_keypair().await?;
 
     Agent::new(listener)
-        .run(Box::new(handler::Handler::new(database, keychain)))
+        .run(Arc::new(handler::Handler::new(database, keychain)))
         .await?;
 
     Ok(())

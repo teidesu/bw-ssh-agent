@@ -142,7 +142,7 @@ impl Response {
 
                 for identity in identities {
                     write_message(&mut buf, &identity.key_blob)?;
-                    write_message(&mut buf, &identity.key_comment.as_bytes())?;
+                    write_message(&mut buf, identity.key_comment.as_bytes())?;
                 }
             }
             Response::SignResponse {

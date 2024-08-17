@@ -3,7 +3,6 @@ use std::{io::Cursor, sync::Arc};
 use tokio::{
     io::{AsyncReadExt as _, AsyncWriteExt as _, BufReader, BufWriter},
     net::{UnixListener, UnixStream},
-    sync::Mutex,
 };
 
 use super::{handler::SSHAgentHandler, protocol};
@@ -14,7 +13,7 @@ pub struct Agent {
 
 async fn handle_connection(
     socket: UnixStream,
-    handler: Arc<Mutex<Box<dyn SSHAgentHandler>>>,
+    handler: Arc<dyn SSHAgentHandler>,
 ) -> color_eyre::Result<()> {
     let (read, write) = socket.into_split();
 
@@ -30,7 +29,7 @@ async fn handle_connection(
 
         let request = protocol::Request::read(&mut cursor)?;
 
-        let response = handler.lock().await.handle_request(request).await?;
+        let response = handler.handle_request(request).await?;
 
         response.write(&mut write).await?;
         write.flush().await?;
@@ -39,17 +38,14 @@ async fn handle_connection(
 
 impl Agent {
     pub fn new(listener: UnixListener) -> Self {
-        Self { listener: listener }
+        Self { listener }
     }
 
-    pub async fn run(&self, handler: Box<dyn SSHAgentHandler>) -> color_eyre::Result<()> {
-        let arc = Arc::new(Mutex::new(handler));
-
+    pub async fn run(&self, handler: Arc<dyn SSHAgentHandler>) -> color_eyre::Result<()> {
         loop {
             let (socket, _) = self.listener.accept().await?;
 
-            let handler_arc = arc.clone();
-
+            let handler_arc = handler.clone();
             tokio::spawn(async move {
                 handle_connection(socket, handler_arc)
                     .await

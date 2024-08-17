@@ -84,7 +84,7 @@ pub async fn bw_login(
         reqwest::header::HeaderValue::from_static("application/x-www-form-urlencoded"),
     );
 
-    let body = serde_urlencoded::to_string(&[
+    let body = serde_urlencoded::to_string([
         ("grant_type", "password"),
         ("username", email),
         ("password", password),
@@ -113,48 +113,3 @@ pub async fn bw_login(
 
     Ok(response)
 }
-
-// impl BitwardenAuth {
-//     pub async fn auth(
-//         &self,
-//         client: &reqwest::Client,
-//         config: &BwConfig,
-//     ) -> color_eyre::Result<BwAuthResponse> {
-//         match self {
-//             BitwardenAuth::ByApiKey {
-//                 client_id,
-//                 client_secret,
-//             } => {
-//                 let url = format!("{}/connect/token", config.environment.identity);
-//                 let mut headers = reqwest::header::HeaderMap::new();
-//                 headers.insert(
-//                     reqwest::header::CONTENT_TYPE,
-//                     reqwest::header::HeaderValue::from_static("application/x-www-form-urlencoded"),
-//                 );
-
-//                 let body = serde_urlencoded::to_string(&[
-//                     ("grant_type", "client_credentials"),
-//                     ("client_id", client_id),
-//                     ("client_secret", client_secret),
-//                     ("deviceType", "21"), // SDK
-//                     ("deviceName", "bw-ssh-agent"),
-//                     (
-//                         "deviceIdentifier",
-//                         uuid::Uuid::new_v4().to_string().as_str(),
-//                     ),
-//                     ("scope", "api"),
-//                 ])?;
-
-//                 let response = client
-//                     .post(url)
-//                     .headers(headers)
-//                     .body(body)
-//                     .send()
-//                     .await?
-//                     .json::<BwAuthResponse>()
-//                     .await?;
-//                 Ok(response)
-//             }
-//         }
-//     }
-// }

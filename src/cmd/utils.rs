@@ -1,10 +1,10 @@
 use sysinfo::{Pid, ProcessStatus};
 use tokio::fs;
 
-use crate::constants::get_pid_path;
+use crate::constants::PID_PATH;
 
 pub async fn check_running() -> color_eyre::Result<bool> {
-    let pid_file = get_pid_path()?;
+    let pid_file = &*PID_PATH;
 
     if fs::metadata(&pid_file).await.is_ok() {
         // check if process is running

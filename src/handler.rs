@@ -5,26 +5,30 @@ use crate::database::Database;
 use crate::keychain::Keychain;
 use signature::Signer;
 use ssh_key::PrivateKey;
-use std::sync::Arc;
 use tokio::sync::Mutex;
 use zeroize::Zeroizing;
 
 pub struct Handler {
-    database: Arc<Mutex<Database>>,
-    keychain: Keychain,
+    database: Mutex<Database>,
+    keychain: Mutex<Keychain>,
 }
 
 impl Handler {
-    pub fn new(database: Arc<Mutex<Database>>, keychain: Keychain) -> Self {
-        Self { database, keychain }
+    pub fn new(database: Database, keychain: Keychain) -> Self {
+        Self {
+            database: Mutex::new(database),
+            keychain: Mutex::new(keychain),
+        }
     }
 }
 
 #[async_trait::async_trait]
 impl SSHAgentHandler for Handler {
-    async fn identities(&mut self) -> color_eyre::Result<Response> {
-        let database = self.database.lock().await;
-        let db_idents = database.get_identities()?;
+    async fn identities(&self) -> color_eyre::Result<Response> {
+        let db_idents = {
+            let database = self.database.lock().await;
+            database.get_identities()?
+        };
 
         let mut idents = Vec::new();
         for db_ident in db_idents {
@@ -37,23 +41,29 @@ impl SSHAgentHandler for Handler {
     }
 
     async fn sign_request(
-        &mut self,
+        &self,
         pubkey: Vec<u8>,
         data: Vec<u8>,
         _flags: u32,
     ) -> color_eyre::Result<Response> {
-        let database = self.database.lock().await;
+        let (auth, identity) = {
+            let database = self.database.lock().await;
 
-        let Some(identity) = database.get_identity_by_public_key(&pubkey)? else {
-            return Ok(Response::Failure);
-        };
+            let Some(identity) = database.get_identity_by_public_key(&pubkey)? else {
+                return Ok(Response::Failure);
+            };
 
-        let Ok(Some(auth)) = database.get_auth() else {
-            return Ok(Response::Failure);
+            let Ok(Some(auth)) = database.get_auth() else {
+                return Ok(Response::Failure);
+            };
+
+            (auth, identity)
         };
 
         let symmetric_key = self
             .keychain
+            .lock()
+            .await
             .decrypt_data(auth.symmetric_key.to_vec())
             .await?;
 
@@ -61,6 +71,7 @@ impl SSHAgentHandler for Handler {
             &symmetric_key,
             &identity.private_key,
         )?);
+
         let private_key = PrivateKey::from_openssh(private_key)?;
 
         let signature = private_key.try_sign(data.as_slice())?;

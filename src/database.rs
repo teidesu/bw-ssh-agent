@@ -1,8 +1,6 @@
-use std::vec;
-
 use rusqlite::params;
 
-use crate::constants::get_database_path;
+use crate::constants::DATABASE_PATH;
 
 #[derive(Debug, Clone)]
 pub struct IdentityDto {
@@ -28,7 +26,7 @@ pub struct Database {
 
 impl Database {
     pub fn open() -> color_eyre::Result<Self> {
-        let conn = rusqlite::Connection::open(get_database_path()?)?;
+        let conn = rusqlite::Connection::open(&*DATABASE_PATH)?;
         Database::migrate(&conn)?;
 
         Ok(Self { conn })
@@ -65,15 +63,7 @@ impl Database {
             .query_map([], Database::map_identity)?
             .collect::<Vec<_>>();
 
-        let mut result = vec![];
-
-        for row in rows {
-            if let Ok(dto) = row {
-                result.push(dto);
-            }
-        }
-
-        Ok(result)
+        Ok(rows.into_iter().flatten().collect())
     }
 
     fn map_auth(row: &rusqlite::Row<'_>) -> Result<AuthDto, rusqlite::Error> {
@@ -120,13 +110,7 @@ impl Database {
             .query_map([public_key], Database::map_identity)?
             .collect::<Vec<_>>();
 
-        for row in rows {
-            if let Ok(dto) = row {
-                return Ok(Some(dto));
-            }
-        }
-
-        Ok(None)
+        Ok(rows.into_iter().flatten().next())
     }
 
     pub fn delete_identity(&self, id: &str) -> color_eyre::Result<()> {
@@ -141,13 +125,7 @@ impl Database {
 
         let rows = stmt.query_map([], Database::map_auth)?.collect::<Vec<_>>();
 
-        for row in rows {
-            if let Ok(dto) = row {
-                return Ok(Some(dto));
-            }
-        }
-
-        Ok(None)
+        Ok(rows.into_iter().flatten().next())
     }
 
     pub fn set_auth(&self, dto: &AuthDto) -> color_eyre::Result<()> {

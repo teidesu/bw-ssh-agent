@@ -74,12 +74,7 @@ pub struct KeychainThread {
 
 impl KeychainThread {
     pub fn thread_loop(mut self) {
-        loop {
-            let command = match self.rx.recv() {
-                Ok(command) => command,
-                Err(_) => break,
-            };
-
+        while let Ok(command) = self.rx.recv() {
             match command {
                 KeychainCommand::Terminate => {
                     self.key = None;
@@ -133,7 +128,7 @@ impl KeychainThread {
 
             unsafe {
                 self.encrypt_data(
-                    &pub_key,
+                    pub_key,
                     Algorithm::ECIESEncryptionStandardVariableIVX963SHA256AESGCM,
                     &data,
                 )
@@ -145,7 +140,7 @@ impl KeychainThread {
 
             unsafe {
                 self.decrypt_data(
-                    &key,
+                    key,
                     Algorithm::ECIESEncryptionStandardVariableIVX963SHA256AESGCM,
                     &data,
                 )
@@ -213,14 +208,14 @@ impl KeychainThread {
             SecKeyCreateEncryptedData(
                 key.to_void() as _,
                 algo.into(),
-                CFData::from_buffer(data.as_ref()).as_concrete_TypeRef(),
+                CFData::from_buffer(data).as_concrete_TypeRef(),
                 &mut error,
             )
         };
 
         if !error.is_null() {
             let err = unsafe { CFError::wrap_under_create_rule(error) };
-            return Err(eyre!("Failed to encrypt data: {err}"));
+            Err(eyre!("Failed to encrypt data: {err}"))
         } else {
             let output = unsafe { CFData::wrap_under_create_rule(output) };
             Ok(output.to_vec())
@@ -239,14 +234,14 @@ impl KeychainThread {
             SecKeyCreateDecryptedData(
                 key.to_void() as _,
                 algo.into(),
-                CFData::from_buffer(data.as_ref()).as_concrete_TypeRef(),
+                CFData::from_buffer(data).as_concrete_TypeRef(),
                 &mut error,
             )
         };
 
         if !error.is_null() {
             let err = unsafe { CFError::wrap_under_create_rule(error) };
-            return Err(eyre!("Failed to encrypt data: {err}"));
+            Err(eyre!("Failed to encrypt data: {err}"))
         } else {
             let output = unsafe { CFData::wrap_under_create_rule(output) };
             Ok(output.to_vec())
@@ -343,8 +338,8 @@ impl Keychain {
         }
     }
 
-    pub fn terminate(self) {
-        let _guard = self.mutex.lock();
+    pub async fn terminate(self) {
+        let _guard = self.mutex.lock().await;
 
         self.tx.send(KeychainCommand::Terminate).unwrap();
 

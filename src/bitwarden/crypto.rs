@@ -66,9 +66,9 @@ pub fn decrypt_with_master_key(key: &[u8], encrypted_data: &str) -> color_eyre::
         return Err(color_eyre::eyre::eyre!("Invalid encrypted data format"));
     }
 
-    let iv = BASE64_STANDARD.decode(&enc_pieces[0])?;
-    let mut data = BASE64_STANDARD.decode(&enc_pieces[1])?;
-    let mac = BASE64_STANDARD.decode(&enc_pieces[2])?;
+    let iv = BASE64_STANDARD.decode(enc_pieces[0])?;
+    let mut data = BASE64_STANDARD.decode(enc_pieces[1])?;
+    let mac = BASE64_STANDARD.decode(enc_pieces[2])?;
 
     // verify the MAC
     let mut mac_expected = Hmac::<Sha256>::new_from_slice(mac_key)?;
