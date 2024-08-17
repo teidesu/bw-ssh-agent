@@ -1,0 +1,6 @@
+/target/
+/dist
+/assets/embedded.provisionprofile
+/.env
+
+.DS_Store

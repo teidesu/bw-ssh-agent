@@ -1,0 +1,30 @@
+env_files = [".env"]
+
+[config]
+skip_core_tasks = true
+default_to_workspace = false
+
+[tasks.build]
+command = "cargo"
+args = ["build"]
+
+[tasks.build-app-dev]
+dependencies = ["build"]
+script = '''
+#!/usr/bin/env bash
+mkdir -p ./dist/Applications/bw-ssh-agent.app/Contents/MacOS
+cp assets/embedded.provisionprofile ./dist/Applications/bw-ssh-agent.app/Contents/
+cp assets/Info.plist ./dist/Applications/bw-ssh-agent.app/Contents/
+cp target/debug/bw-ssh-agent ./dist/Applications/bw-ssh-agent.app/Contents/MacOS/
+sed 's/%TEAM_ID%/'$TEAM_ID'/g' ./assets/entitlements.plist > ./dist/entitlements.plist
+codesign --force --deep --identifier "desu.tei.bw-ssh-agent" --sign $SIGNING_IDENTITY --entitlements ./dist/entitlements.plist --timestamp=none --verbose=0 -o runtime ./dist/Applications/bw-ssh-agent.app
+'''
+
+[tasks.run]
+dependencies = ["build-app-dev"]
+command = "./dist/Applications/bw-ssh-agent.app/Contents/MacOS/bw-ssh-agent"
+args = ["${@}"]
+
+[tasks.clean]
+command = "cargo"
+args = ["clean"]

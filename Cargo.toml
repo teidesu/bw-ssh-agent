@@ -1,0 +1,38 @@
+[package]
+name = "bw-ssh-agent"
+version = "0.0.0"
+description = ""
+authors = ["teidesu"]
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "=1.39.2", features = ["full"] }
+byteorder = "1.1.0"
+directories = "5.0"
+ssh-key = { version = "0.6.6", features = ["ed25519", "getrandom"] }
+signature = "2.2.0"
+color-eyre = "0.6.3"
+async-trait = "0.1.81"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+sysinfo = "0.31.2"
+reqwest = { version = "0.12.5", features = ["json"] }
+clap = { version = "4.5.15", features = ["derive"] }
+base64 = "0.22.1"
+serde_urlencoded = "0.7.1"
+uuid = { version = "1.10.0", features = ["v4"] }
+rustyline = "14.0.0"
+pbkdf2 = "0.12.2"
+hmac = "0.12.1"
+sha2 = "0.10.8"
+aes = "0.8.4"
+cbc = "0.1.2"
+hkdf = "0.12.4"
+security-framework = { version = "2.11.1", features = ["OSX_10_15"] }
+core-foundation-sys = "0.8.7"
+security-framework-sys = { version = "2.11.1", features = ["OSX_10_13", "OSX_10_15"] }
+core-foundation = "0.9.4"
+zeroize = "1.8.1"
+serde_path_to_error = "0.1.16"
+serde_repr = "0.1.19"
