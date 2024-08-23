@@ -9,6 +9,7 @@ stores the bitwarden auth info in secure enclave, and decrypts them on the fly
 to access secure enclave, apple requires a provisioning profile.
 to get one, use xcode to build an empty app with the correct entitlements, and then yoink 
 the `embedded.provisionprofile` file from the build folder into `assets/`.
+for a full guide, see [entitlements-guide.md](docs/entitlements-guide.md)
 
 you also need to fill in the `.env` file with the signing identity and team id.
 
@@ -35,6 +36,7 @@ SSH_AUTH_SOCK=~/Library/Application\ Support/bw-ssh-agent/agent.sock ssh -F none
 - think of a way to avoid having to access tpm for every connection 
   - maybe temporarily store the decrypted symmetric key in memory?
 - improve bitwarden auth support (currently only pbkdf2 is supported, and 2fa is not supported)
+- implement refresh tokens for bitwarden
 - add support for other operating systems
 
 ## acknowledgements

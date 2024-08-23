@@ -32,7 +32,8 @@ use security_framework_sys::{
 use tokio::sync::Mutex;
 use zeroize::Zeroizing;
 
-const KEY_LABEL: &str = "desu.tei.bw-ssh-agent.main-key";
+// ignore the rust-analyzer warning, this is supplied from .env by cargo make
+const KEY_LABEL: &str = concat!(env!("ORGANIZATION_ID"), ".bw-ssh-agent.main-key");
 
 extern "C" {
     pub static kSecAttrApplicationTag: CFStringRef;

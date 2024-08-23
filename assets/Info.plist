@@ -11,7 +11,7 @@
 	<!-- <key>CFBundleIconFile</key>
 	<string>AppIcon</string> -->
 	<key>CFBundleIdentifier</key>
-	<string>desu.tei.bw-ssh-agent</string>
+	<string>%ORGANIZATION_ID%.bw-ssh-agent</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLongVersionString</key>
