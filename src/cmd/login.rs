@@ -3,7 +3,7 @@ use rustyline::DefaultEditor;
 
 use crate::{
     bitwarden::{
-        auth::{bw_login, bw_prelogin},
+        auth::{bw_login, bw_prelogin, KdfType},
         config::bw_get_config,
         constants::{get_bw_http_client, BW_DEFAULT_VAULT_URL},
         crypto::{decrypt_with_master_key, hkdf_expand_key, make_master_key, make_master_key_hash},
@@ -42,14 +42,20 @@ pub async fn cmd_login(database: Database, command: Commands) -> color_eyre::Res
         println!(
             "Server is {} v{}",
             server.name.clone(),
-            server.version.clone().unwrap_or(config.version.clone())
+            config
+                .version
+                .clone()
+                .unwrap_or_else(|| String::from(" unknown"))
         );
     }
 
     let prelogin_result = bw_prelogin(&client, &config, &email).await?;
 
-    if prelogin_result.kdf != 0 {
-        return Err(eyre!("KDF method {} is not supported", prelogin_result.kdf));
+    if prelogin_result.kdf != KdfType::Pbkdf2Sha256 {
+        return Err(eyre!(
+            "KDF method {:#?} is not supported",
+            prelogin_result.kdf
+        ));
     }
 
     println!("Hashing password...");

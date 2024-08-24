@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use crate::{
     bitwarden::{
-        config::{bw_get_config, BwConfig},
+        config::{bw_get_config, ConfigResponseModel},
         constants::get_bw_http_client,
         crypto::decrypt_with_master_key,
         sync::{bw_sync, CipherType},
@@ -17,7 +17,7 @@ const BW_EXPOSE_FIELD: &str = "desu.tei.bw-ssh-agent:expose";
 pub async fn sync_keys(
     database: &Database,
     client: &reqwest::Client,
-    config: &BwConfig,
+    config: &ConfigResponseModel,
     symmetric_key: &[u8],
     auth: &AuthDto,
 ) -> color_eyre::Result<()> {
@@ -46,11 +46,22 @@ pub async fn sync_keys(
 
         let mut expose = false;
         for field in fields {
-            if decrypt_with_master_key(symmetric_key, &field.name)? != BW_EXPOSE_FIELD.as_bytes() {
+            if let Some(field_name) = &field.name {
+                if decrypt_with_master_key(symmetric_key, &field_name)?
+                    != BW_EXPOSE_FIELD.as_bytes()
+                {
+                    continue;
+                }
+            } else {
                 continue;
             }
 
-            let value = decrypt_with_master_key(symmetric_key, &field.value)?;
+            let value = if let Some(value) = &field.value {
+                decrypt_with_master_key(symmetric_key, value)?
+            } else {
+                continue;
+            };
+
             if value == b"1" || value == b"true" {
                 expose = true;
             }
@@ -76,7 +87,10 @@ pub async fn sync_keys(
         let old = identities.iter().find(|i| i.id == cipher.id);
         let mut should_update = false;
 
-        let name = String::from_utf8(decrypt_with_master_key(symmetric_key, &cipher.name)?)?;
+        let name = String::from_utf8(decrypt_with_master_key(
+            symmetric_key,
+            &cipher.name.as_ref().unwrap(),
+        )?)?;
 
         if let Some(old) = old {
             if old.name != name || old.public_key != pub_key {
