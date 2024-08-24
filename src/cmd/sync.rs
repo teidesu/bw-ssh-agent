@@ -47,13 +47,15 @@ pub async fn sync_keys(
         let mut expose = false;
         for field in fields {
             if let Some(field_name) = &field.name {
-                if decrypt_with_master_key(symmetric_key, &field_name)? != BW_EXPOSE_FIELD.as_bytes() {
+                if decrypt_with_master_key(symmetric_key, &field_name)?
+                    != BW_EXPOSE_FIELD.as_bytes()
+                {
                     continue;
                 }
             } else {
                 continue;
             }
-            
+
             let value = if let Some(value) = &field.value {
                 decrypt_with_master_key(symmetric_key, value)?
             } else {
@@ -85,7 +87,10 @@ pub async fn sync_keys(
         let old = identities.iter().find(|i| i.id == cipher.id);
         let mut should_update = false;
 
-        let name = String::from_utf8(decrypt_with_master_key(symmetric_key, &cipher.name.as_ref().unwrap())?)?;
+        let name = String::from_utf8(decrypt_with_master_key(
+            symmetric_key,
+            &cipher.name.as_ref().unwrap(),
+        )?)?;
 
         if let Some(old) = old {
             if old.name != name || old.public_key != pub_key {

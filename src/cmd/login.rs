@@ -42,14 +42,20 @@ pub async fn cmd_login(database: Database, command: Commands) -> color_eyre::Res
         println!(
             "Server is {} v{}",
             server.name.clone(),
-            config.version.clone().unwrap_or_else(|| String::from(" unknown"))
+            config
+                .version
+                .clone()
+                .unwrap_or_else(|| String::from(" unknown"))
         );
     }
 
     let prelogin_result = bw_prelogin(&client, &config, &email).await?;
 
     if prelogin_result.kdf != KdfType::Pbkdf2Sha256 {
-        return Err(eyre!("KDF method {:#?} is not supported", prelogin_result.kdf));
+        return Err(eyre!(
+            "KDF method {:#?} is not supported",
+            prelogin_result.kdf
+        ));
     }
 
     println!("Hashing password...");

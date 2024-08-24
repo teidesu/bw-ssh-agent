@@ -30,6 +30,11 @@ pub async fn bw_get_config(
     server_url: &String,
 ) -> color_eyre::Result<ConfigResponseModel> {
     let url = format!("{}/api/config", server_url);
-    let response = client.get(url).send().await?.json::<ConfigResponseModel>().await?;
+    let response = client
+        .get(url)
+        .send()
+        .await?
+        .json::<ConfigResponseModel>()
+        .await?;
     Ok(response)
 }

@@ -5,7 +5,6 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use super::config::ConfigResponseModel;
 
-
 #[derive(Serialize_repr, Deserialize_repr, PartialEq, Clone, Debug)]
 #[repr(u8)]
 pub enum KdfType {
