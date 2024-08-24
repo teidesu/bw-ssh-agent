@@ -2,14 +2,14 @@ use color_eyre::eyre::eyre;
 use serde::Deserialize;
 use serde_repr::Deserialize_repr;
 
-use super::config::BwConfig;
+use super::config::ConfigResponseModel;
 
 // structs are intentionally incomplete to simplify usage
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct BwSyncResponse {
-    #[serde(rename = "Ciphers")]
-    pub ciphers: Vec<BwCipher>,
+pub struct SyncResponseModel {
+    #[serde(rename = "ciphers")]
+    pub ciphers: Vec<CipherDetailsResponseModel>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize_repr)]
@@ -22,48 +22,56 @@ pub enum CipherType {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct BwCipher {
-    #[serde(rename = "CreationDate")]
+pub struct CipherDetailsResponseModel {
+    #[serde(rename = "creationDate")]
     pub creation_date: String,
-    #[serde(rename = "DeletedDate")]
+    #[serde(rename = "deletedDate")]
     pub deleted_date: Option<String>,
-    #[serde(rename = "Fields")]
+    #[serde(rename = "fields")]
     #[serde(default)]
-    pub fields: Option<Vec<Field>>,
-    #[serde(rename = "Id")]
-    pub id: String,
-    #[serde(rename = "Name")]
-    pub name: String,
-    #[serde(rename = "Notes")]
+    pub fields: Option<Vec<CipherFieldModel>>,
+    #[serde(rename = "id")]
+    pub id: String, // uuid in the scheme
+    #[serde(rename = "name")]
+    pub name: Option<String>,
+    #[serde(rename = "notes")]
     pub notes: Option<String>,
-    #[serde(rename = "SecureNote")]
-    pub secure_note: Option<SecureNote>,
-    #[serde(rename = "Type")]
+    #[serde(rename = "secureNote")]
+    pub secure_note: Option<CipherSecureNoteModel>,
+    #[serde(rename = "type")]
     pub type_field: CipherType,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct Field {
-    #[serde(rename = "Name")]
-    pub name: String,
-    #[serde(rename = "Type")]
-    pub type_field: i64,
-    #[serde(rename = "Value")]
-    pub value: String,
+#[derive(Debug, Clone, PartialEq, Deserialize_repr)]
+#[repr(i32)]
+enum FieldType {
+    Text = 0,
+    Hidden = 1,
+    Boolean = 2,
+    Linked = 3
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SecureNote {
-    #[serde(rename = "Type")]
-    pub type_field: i64,
+pub struct CipherFieldModel {
+    #[serde(rename = "name")]
+    pub name: Option<String>,
+    #[serde(rename = "type")]
+    pub type_field: FieldType,
+    #[serde(rename = "value")]
+    pub value: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct CipherSecureNoteModel {
+    #[serde(rename = "type")]
+    pub type_field: u8,
 }
 
 pub async fn bw_sync(
     client: &reqwest::Client,
-    config: &BwConfig,
+    config: &ConfigResponseModel,
     token: &str,
-) -> color_eyre::Result<BwSyncResponse> {
+) -> color_eyre::Result<SyncResponseModel> {
     let url = format!("{}/sync?excludeDomains=true", config.environment.api);
 
     let response = client
@@ -76,7 +84,7 @@ pub async fn bw_sync(
 
     let mut jd = serde_json::Deserializer::from_str(&response);
     let response = serde_path_to_error::deserialize(&mut jd)
-        .map_err(|e| eyre!("Unexpected response at {}", e))?;
+        .map_err(|e| eyre!("Unexpected response: {}", e))?;
 
     Ok(response)
 }

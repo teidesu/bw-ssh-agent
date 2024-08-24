@@ -1,18 +1,33 @@
 use color_eyre::eyre::eyre;
 use serde::Deserialize;
 use serde_json::json;
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use super::config::BwConfig;
+use super::config::ConfigResponseModel;
+
+
+#[derive(Serialize_repr, Deserialize_repr, PartialEq, Clone, Debug)]
+#[repr(u8)]
+pub enum KdfType {
+    Pbkdf2Sha256 = 0,
+    Argon2id = 1,
+}
+
+impl Default for KdfType {
+    fn default() -> Self {
+        KdfType::Pbkdf2Sha256
+    }
+}
 
 #[derive(Default, Debug, Clone, PartialEq, Deserialize)]
-pub struct BwPreloginResponse {
-    #[serde(rename = "Kdf")]
-    pub kdf: u32,
-    #[serde(rename = "KdfIterations")]
+pub struct PreloginResponseModel {
+    #[serde(rename = "kdf")]
+    pub kdf: KdfType,
+    #[serde(rename = "kdfIterations")]
     pub kdf_iterations: u32,
-    #[serde(rename = "KdfMemory")]
+    #[serde(rename = "kdfMemory")]
     pub kdf_memory: Option<u32>,
-    #[serde(rename = "KdfParallelism")]
+    #[serde(rename = "kdfParallelism")]
     pub kdf_parallelism: Option<u32>,
 }
 
@@ -45,9 +60,9 @@ pub struct BwAuthResponse {
 
 pub async fn bw_prelogin(
     client: &reqwest::Client,
-    config: &BwConfig,
+    config: &ConfigResponseModel,
     email: &str,
-) -> color_eyre::Result<BwPreloginResponse> {
+) -> color_eyre::Result<PreloginResponseModel> {
     let url = format!("{}/accounts/prelogin", config.environment.identity);
     let mut headers = reqwest::header::HeaderMap::new();
     headers.insert(
@@ -65,7 +80,7 @@ pub async fn bw_prelogin(
         .body(body.to_string())
         .send()
         .await?
-        .json::<BwPreloginResponse>()
+        .json::<PreloginResponseModel>()
         .await?;
 
     Ok(resp)
@@ -73,7 +88,7 @@ pub async fn bw_prelogin(
 
 pub async fn bw_login(
     client: &reqwest::Client,
-    config: &BwConfig,
+    config: &ConfigResponseModel,
     email: &str,
     password: &str,
 ) -> color_eyre::Result<BwAuthResponse> {
