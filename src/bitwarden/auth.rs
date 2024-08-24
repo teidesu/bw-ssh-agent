@@ -12,13 +12,7 @@ pub enum KdfType {
     Argon2id = 1,
 }
 
-impl Default for KdfType {
-    fn default() -> Self {
-        KdfType::Pbkdf2Sha256
-    }
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct PreloginResponseModel {
     #[serde(rename = "kdf")]
     pub kdf: KdfType,
