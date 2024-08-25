@@ -14,13 +14,13 @@ pub enum KdfType {
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct PreloginResponseModel {
-    #[serde(rename = "kdf")]
+    #[serde(rename = "kdf", alias = "Kdf")]
     pub kdf: KdfType,
-    #[serde(rename = "kdfIterations")]
+    #[serde(rename = "kdfIterations", alias = "KdfIterations")]
     pub kdf_iterations: u32,
-    #[serde(rename = "kdfMemory")]
+    #[serde(rename = "kdfMemory", alias = "KdfMemory")]
     pub kdf_memory: Option<u32>,
-    #[serde(rename = "kdfParallelism")]
+    #[serde(rename = "kdfParallelism", alias = "KdfParallelism")]
     pub kdf_parallelism: Option<u32>,
 }
 
