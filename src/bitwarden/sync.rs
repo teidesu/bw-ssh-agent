@@ -40,6 +40,8 @@ pub struct CipherDetailsResponseModel {
     pub secure_note: Option<CipherSecureNoteModel>,
     #[serde(rename = "type", alias = "Type")]
     pub type_field: CipherType,
+    #[serde(rename = "key", alias = "Key")]
+    pub key: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize_repr)]

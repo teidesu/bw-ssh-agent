@@ -5,14 +5,66 @@ use crate::{
     bitwarden::{
         config::{bw_get_config, ConfigResponseModel},
         constants::get_bw_http_client,
-        crypto::decrypt_with_master_key,
-        sync::{bw_sync, CipherType},
+        crypto::bw_decrypt_encstr,
+        sync::{bw_sync, CipherDetailsResponseModel, CipherType},
     },
     database::{AuthDto, Database, IdentityDto},
     keychain::Keychain,
 };
 
 const BW_EXPOSE_FIELD: &str = "desu.tei.bw-ssh-agent:expose";
+
+fn extract_key_from_cipher<'a>(
+    cipher: &'a CipherDetailsResponseModel,
+    symmetric_key: &[u8],
+) -> color_eyre::Result<Option<(String, String, &'a String)>> {
+    let Some(ref fields) = cipher.fields else {
+        return Ok(None);
+    };
+
+    let cipher_key = if let Some(ref encrypted) = cipher.key {
+        bw_decrypt_encstr(symmetric_key, encrypted)?
+    } else {
+        symmetric_key.to_vec()
+    };
+
+    let mut expose = false;
+    for field in fields {
+        if let Some(field_name) = &field.name {
+            if bw_decrypt_encstr(&cipher_key, &field_name)? != BW_EXPOSE_FIELD.as_bytes() {
+                continue;
+            }
+        } else {
+            continue;
+        }
+
+        let value = if let Some(value) = &field.value {
+            bw_decrypt_encstr(&cipher_key, value)?
+        } else {
+            continue;
+        };
+
+        if value == b"1" || value == b"true" {
+            expose = true;
+        }
+    }
+
+    if !expose {
+        return Ok(None);
+    }
+
+    let Some(ref encrypted_private_key) = cipher.notes else {
+        return Ok(None);
+    };
+
+    let private_key = String::from_utf8(bw_decrypt_encstr(&cipher_key, encrypted_private_key)?)?;
+    let name = String::from_utf8(bw_decrypt_encstr(
+        &cipher_key,
+        &cipher.name.as_ref().unwrap(),
+    )?)?;
+
+    Ok(Some((name, private_key, encrypted_private_key)))
+}
 
 pub async fn sync_keys(
     database: &Database,
@@ -40,44 +92,16 @@ pub async fn sync_keys(
     let mut new_identities = vec![];
 
     for cipher in secure_notes {
-        let Some(ref fields) = cipher.fields else {
-            continue;
-        };
-
-        let mut expose = false;
-        for field in fields {
-            if let Some(field_name) = &field.name {
-                if decrypt_with_master_key(symmetric_key, &field_name)?
-                    != BW_EXPOSE_FIELD.as_bytes()
-                {
+        let (name, private_key, encrypted_private_key) = {
+            match extract_key_from_cipher(&cipher, symmetric_key) {
+                Ok(Some(keys)) => keys,
+                Ok(None) => continue,
+                Err(e) => {
+                    println!("Error extracting key from cipher id {}: {:?}", cipher.id, e);
                     continue;
                 }
-            } else {
-                continue;
             }
-
-            let value = if let Some(value) = &field.value {
-                decrypt_with_master_key(symmetric_key, value)?
-            } else {
-                continue;
-            };
-
-            if value == b"1" || value == b"true" {
-                expose = true;
-            }
-        }
-
-        if !expose {
-            continue;
-        }
-
-        let Some(ref encrypted_private_key) = cipher.notes else {
-            continue;
         };
-        let private_key = String::from_utf8(decrypt_with_master_key(
-            symmetric_key,
-            encrypted_private_key,
-        )?)?;
 
         let ssh_key = ssh_key::PrivateKey::from_str(&private_key)?;
         let pub_key = ssh_key.public_key().to_bytes()?;
@@ -86,11 +110,6 @@ pub async fn sync_keys(
 
         let old = identities.iter().find(|i| i.id == cipher.id);
         let mut should_update = false;
-
-        let name = String::from_utf8(decrypt_with_master_key(
-            symmetric_key,
-            &cipher.name.as_ref().unwrap(),
-        )?)?;
 
         if let Some(old) = old {
             if old.name != name || old.public_key != pub_key {
@@ -108,6 +127,7 @@ pub async fn sync_keys(
                 name,
                 public_key: pub_key.clone(),
                 private_key: encrypted_private_key.clone(),
+                intermediate_key: cipher.key.clone(),
             })?;
             changed += 1;
         }

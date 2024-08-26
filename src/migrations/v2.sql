@@ -1,0 +1,1 @@
+alter table identities add column intermediate_key text;

@@ -6,7 +6,7 @@ use crate::{
         auth::{bw_login, bw_prelogin, KdfType},
         config::bw_get_config,
         constants::{get_bw_http_client, BW_DEFAULT_VAULT_URL},
-        crypto::{decrypt_with_master_key, hkdf_expand_key, make_master_key, make_master_key_hash},
+        crypto::{bw_decrypt_encstr, hkdf_expand_key, make_master_key, make_master_key_hash},
     },
     cmd::sync::sync_keys,
     database::{AuthDto, Database},
@@ -73,7 +73,7 @@ pub async fn cmd_login(database: Database, command: Commands) -> color_eyre::Res
         .try_into()
         .map_err(|_| eyre!("Invalid master key length"))?;
 
-    let symmetric_key = decrypt_with_master_key(&master_key, &login_result.key)?;
+    let symmetric_key = bw_decrypt_encstr(&master_key, &login_result.key)?;
 
     let mut keychain = Keychain::start();
     keychain.ensure_keypair().await?;

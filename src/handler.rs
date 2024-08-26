@@ -1,6 +1,6 @@
 use crate::agent::protocol::Identity;
 use crate::agent::{handler::SSHAgentHandler, protocol::Response};
-use crate::bitwarden::crypto::decrypt_with_master_key;
+use crate::bitwarden::crypto::bw_decrypt_encstr;
 use crate::database::Database;
 use crate::keychain::Keychain;
 use signature::Signer;
@@ -60,17 +60,18 @@ impl SSHAgentHandler for Handler {
             (auth, identity)
         };
 
-        let symmetric_key = self
+        let mut symmetric_key = self
             .keychain
             .lock()
             .await
             .decrypt_data(auth.symmetric_key.to_vec())
             .await?;
 
-        let private_key = Zeroizing::new(decrypt_with_master_key(
-            &symmetric_key,
-            &identity.private_key,
-        )?);
+        if let Some(intermediate_key) = &identity.intermediate_key {
+            symmetric_key = Zeroizing::new(bw_decrypt_encstr(&symmetric_key, intermediate_key)?);
+        }
+
+        let private_key = Zeroizing::new(bw_decrypt_encstr(&symmetric_key, &identity.private_key)?);
 
         let private_key = PrivateKey::from_openssh(private_key)?;
 

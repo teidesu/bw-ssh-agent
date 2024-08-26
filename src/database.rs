@@ -8,6 +8,7 @@ pub struct IdentityDto {
     pub name: String,
     pub public_key: Vec<u8>,
     pub private_key: String,
+    pub intermediate_key: Option<String>,
 }
 
 #[derive(Debug)]
@@ -34,9 +35,20 @@ impl Database {
 
     fn migrate(conn: &rusqlite::Connection) -> color_eyre::Result<()> {
         let version: i32 = conn.pragma_query_value(None, "user_version", |row| row.get(0))?;
-        if version == 0 {
+        let mut new_version = version;
+
+        if new_version == 0 {
             conn.execute_batch(include_str!("migrations/v1.sql"))?;
-            conn.pragma_update(None, "user_version", 1)?;
+            new_version = 1;
+        }
+
+        if new_version == 1 {
+            conn.execute_batch(include_str!("migrations/v2.sql"))?;
+            new_version = 2;
+        }
+
+        if version != new_version {
+            conn.pragma_update(None, "user_version", new_version)?;
         }
 
         Ok(())
@@ -47,12 +59,14 @@ impl Database {
         let name: String = row.get(1)?;
         let public_key: Vec<u8> = row.get(2)?;
         let private_key: String = row.get(3)?;
+        let intermediate_key: Option<String> = row.get(4)?;
 
         Ok(IdentityDto {
             id,
             name,
             public_key,
             private_key,
+            intermediate_key,
         })
     }
 
@@ -86,13 +100,20 @@ impl Database {
 
     pub fn add_identity(&self, dto: &IdentityDto) -> color_eyre::Result<()> {
         self.conn.execute(
-            "INSERT INTO identities (id, name, public_key, private_key)
-                VALUES (?1, ?2, ?3, ?4)
+            "INSERT INTO identities (id, name, public_key, private_key, intermediate_key)
+                VALUES (?1, ?2, ?3, ?4, ?5)
                 ON CONFLICT (id) DO UPDATE SET
                     name = excluded.name,
                     public_key = excluded.public_key,
-                    private_key = excluded.private_key",
-            params![dto.id, dto.name, dto.public_key, dto.private_key],
+                    private_key = excluded.private_key,
+                    intermediate_key = excluded.intermediate_key",
+            params![
+                dto.id,
+                dto.name,
+                dto.public_key,
+                dto.private_key,
+                dto.intermediate_key
+            ],
         )?;
 
         Ok(())

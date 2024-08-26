@@ -40,7 +40,7 @@ pub fn hkdf_expand_key(master_key: &[u8]) -> color_eyre::Result<[u8; 64]> {
     Ok(expanded_key)
 }
 
-pub fn decrypt_with_master_key(key: &[u8], encrypted_data: &str) -> color_eyre::Result<Vec<u8>> {
+pub fn bw_decrypt_encstr(key: &[u8], encrypted_data: &str) -> color_eyre::Result<Vec<u8>> {
     let (enc_key, mac_key) = (&key[..32], &key[32..]);
 
     let header_pieces = encrypted_data.split(".").collect::<Vec<&str>>();
