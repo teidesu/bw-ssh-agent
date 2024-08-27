@@ -103,7 +103,13 @@ pub async fn sync_keys(
             }
         };
 
-        let ssh_key = ssh_key::PrivateKey::from_str(&private_key)?;
+        let ssh_key = match ssh_key::PrivateKey::from_str(&private_key) {
+            Ok(key) => key,
+            Err(_) => {
+                println!("Error parsing SSH key from the note named \"{}\"", name);
+                continue;
+            }
+        };
         let pub_key = ssh_key.public_key().to_bytes()?;
 
         found += 1;
