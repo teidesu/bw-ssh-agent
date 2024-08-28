@@ -36,3 +36,5 @@ core-foundation = "0.9.4"
 zeroize = "1.8.1"
 serde_path_to_error = "0.1.16"
 serde_repr = "0.1.19"
+bitflags = "2.6.0"
+rsa = { version = "0.9.6", features = ["sha2"] }

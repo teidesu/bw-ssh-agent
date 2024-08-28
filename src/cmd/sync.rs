@@ -106,7 +106,10 @@ pub async fn sync_keys(
         let ssh_key = match ssh_key::PrivateKey::from_str(&private_key) {
             Ok(key) => key,
             Err(e) => {
-                println!("Error parsing SSH key from the note named \"{}\": {}", name, e);
+                println!(
+                    "Error parsing SSH key from the note named \"{}\": {}",
+                    name, e
+                );
                 continue;
             }
         };

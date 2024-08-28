@@ -1,3 +1,4 @@
+use bitflags::bitflags;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Read, Write};
 use tokio::io::AsyncWrite;
@@ -52,6 +53,16 @@ fn write_message(w: &mut dyn Write, string: &[u8]) -> color_eyre::Result<()> {
     w.write_u32::<BigEndian>(string.len() as u32)?;
     w.write_all(string)?;
     Ok(())
+}
+
+// https://datatracker.ietf.org/doc/html/draft-miller-ssh-agent#name-new-registry-ssh-agent-sign
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct SignatureFlags: u32 {
+        const reserved = 1 << 0;
+        const SSH_AGENT_RSA_SHA2_256 = 1 << 1;
+        const SSH_AGENT_RSA_SHA2_512 = 1 << 2;
+    }
 }
 
 #[derive(Debug)]
