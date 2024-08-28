@@ -79,7 +79,7 @@ impl SSHAgentHandler for Handler {
         let sig_bytes = signature.as_bytes();
 
         Ok(Response::SignResponse {
-            algo_name: private_key.algorithm().to_string(),
+            algo_name: signature.algorithm().to_string(),
             signature: sig_bytes.into(),
         })
     }
