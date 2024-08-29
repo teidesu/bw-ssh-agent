@@ -1,7 +1,10 @@
 use std::fs;
 
 use clap::{command, Parser, Subcommand};
-use cmd::{daemon::cmd_daemon, list::cmd_list, login::cmd_login, sync::cmd_sync};
+use cmd::{
+    daemon_register::cmd_daemon_register, daemon_run::cmd_daemon_run, list::cmd_list,
+    login::cmd_login, sync::cmd_sync,
+};
 use constants::DATA_DIR;
 use database::Database;
 
@@ -14,10 +17,21 @@ pub mod handler;
 pub mod keychain;
 pub mod utils;
 
+#[derive(Clone, Debug, Subcommand)]
+pub enum DaemonCommands {
+    /// Runs the daemon in this session
+    Run,
+    /// Registers the daemon as a MacOS service
+    Register,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    /// Launches the daemon
-    Daemon,
+    /// Daemon controls
+    Daemon {
+        #[command(subcommand)]
+        subcommand: DaemonCommands,
+    },
     /// Logs into the account
     Login {
         #[arg(long)]
@@ -49,11 +63,14 @@ async fn main() -> color_eyre::Result<()> {
     fs::create_dir_all(&*DATA_DIR)?;
 
     let database = Database::open()?;
-
+    
     match cli.command {
-        Commands::Daemon => {
-            cmd_daemon(database).await?;
-        }
+        Commands::Daemon { subcommand } => match subcommand {
+            DaemonCommands::Run => cmd_daemon_run(database).await?,
+            DaemonCommands::Register => unsafe {
+                cmd_daemon_register()?;
+            },
+        },
         Commands::Login { .. } => {
             cmd_login(database, cli.command).await?;
         }

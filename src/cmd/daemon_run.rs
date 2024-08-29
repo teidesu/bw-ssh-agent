@@ -11,7 +11,7 @@ use crate::{
     keychain::Keychain,
 };
 
-pub async fn cmd_daemon(database: Database) -> color_eyre::Result<()> {
+pub async fn cmd_daemon_run(database: Database) -> color_eyre::Result<()> {
     let pipe = &*SOCKET_PATH;
     let pid_file = &*PID_PATH;
 

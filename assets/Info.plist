@@ -5,19 +5,19 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>bw-ssh-agent</string>
+	<string>%BUNDLE_NAME%</string>
 	<key>CFBundleGetInfoString</key>
 	<string></string>
 	<!-- <key>CFBundleIconFile</key>
 	<string>AppIcon</string> -->
 	<key>CFBundleIdentifier</key>
-	<string>%ORGANIZATION_ID%.bw-ssh-agent</string>
+	<string>%BUNDLE_ID%</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLongVersionString</key>
 	<string></string>
 	<key>CFBundleName</key>
-	<string>bw-ssh-agent</string>
+	<string>%BUNDLE_NAME%</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

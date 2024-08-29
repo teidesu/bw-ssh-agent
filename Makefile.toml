@@ -10,15 +10,7 @@ args = ["build"]
 
 [tasks.build-app-dev]
 dependencies = ["build"]
-script = '''
-#!/usr/bin/env bash
-mkdir -p ./dist/Applications/bw-ssh-agent.app/Contents/MacOS
-cp assets/embedded.provisionprofile ./dist/Applications/bw-ssh-agent.app/Contents/
-cp target/debug/bw-ssh-agent ./dist/Applications/bw-ssh-agent.app/Contents/MacOS/
-sed 's/%TEAM_ID%/'$TEAM_ID'/g; s/%ORGANIZATION_ID%/'$ORGANIZATION_ID'/g' ./assets/entitlements.plist > ./dist/entitlements.plist
-sed 's/%ORGANIZATION_ID%/'$ORGANIZATION_ID'/g' ./assets/Info.plist > ./dist/Applications/bw-ssh-agent.app/Contents/Info.plist
-codesign --force --deep --identifier "$ORGANIZATION_ID.bw-ssh-agent" --sign $SIGNING_IDENTITY --entitlements ./dist/entitlements.plist --timestamp=none --verbose=0 -o runtime ./dist/Applications/bw-ssh-agent.app
-'''
+script = { file = "build.sh" }
 
 [tasks.run]
 dependencies = ["build-app-dev"]
