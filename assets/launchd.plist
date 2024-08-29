@@ -7,7 +7,7 @@
     	<key>Label</key>
         <string>%BUNDLE_NAME%</string>
         <key>RunAtLoad</key>
-	    <false/>
+	    <true />
         <key>BundleProgram</key>
 	    <string>Contents/MacOS/bw-ssh-agent</string>
         <key>ProgramArguments</key>
