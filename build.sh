@@ -8,7 +8,7 @@ mkdir -p ./dist/Applications/$bundle_name.app/Contents/MacOS
 mkdir -p ./dist/Applications/$bundle_name.app/Contents/Library/LaunchAgents
 
 cp assets/embedded.provisionprofile ./dist/Applications/$bundle_name.app/Contents/
-cp target/debug/bw-ssh-agent ./dist/Applications/$bundle_name.app/Contents/MacOS/
+cp target/$TARGET_DIR/bw-ssh-agent ./dist/Applications/$bundle_name.app/Contents/MacOS/
 
 sed 's/%TEAM_ID%/'$TEAM_ID'/g; s/%BUNDLE_ID%/'$bundle_id'/g' ./assets/entitlements.plist > ./dist/entitlements.plist
 sed 's/%BUNDLE_ID%/'$bundle_id'/g; s/%BUNDLE_NAME%/'$bundle_name'/g' ./assets/Info.plist > ./dist/Applications/$bundle_name.app/Contents/Info.plist

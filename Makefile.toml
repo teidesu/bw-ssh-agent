@@ -4,16 +4,26 @@ env_files = [".env"]
 skip_core_tasks = true
 default_to_workspace = false
 
-[tasks.build]
+[tasks.build-dev]
+private = true
 command = "cargo"
 args = ["build"]
+condition = { profiles = ["development"] }
+env = { "TARGET_DIR" = "debug"}
 
-[tasks.build-app-dev]
-dependencies = ["build"]
+[tasks.build-release]
+private = true
+command = "cargo"
+args = ["build", "--release"]
+condition = { profiles = ["production"] }
+env = { "TARGET_DIR" = "release"}
+
+[tasks.build]
+dependencies = ["build-dev", "build-release"]
 script = { file = "build.sh" }
 
 [tasks.run]
-dependencies = ["build-app-dev"]
+dependencies = ["build"]
 command = "./dist/Applications/bw-ssh-agent.app/Contents/MacOS/bw-ssh-agent"
 args = ["${@}"]
 

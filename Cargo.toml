@@ -38,5 +38,5 @@ serde_path_to_error = "0.1.16"
 serde_repr = "0.1.19"
 bitflags = "2.6.0"
 rsa = { version = "0.9.6", features = ["sha2"] }
-objc2-service-management = { version = "0.2.2", features = ["all"]}
+objc2-service-management = { version = "0.2.2", features = ["std", "SMAppService"]}
 objc2-foundation = "0.2.2"

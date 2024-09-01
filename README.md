@@ -24,7 +24,7 @@ bw-ssh-agent only exposes the keys that have the `desu.tei.bw-ssh-agent:expose` 
 bw-ssh-agent login
 
 # start the daemon
-bw-ssh-agent daemon &
+bw-ssh-agent daemon start &
 
 # now you can use the agent to ssh
 SSH_AUTH_SOCK=~/Library/Application\ Support/bw-ssh-agent/agent.sock ssh -F none 1.2.3.4
