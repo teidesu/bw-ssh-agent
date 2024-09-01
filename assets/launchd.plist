@@ -16,9 +16,5 @@
             <string>daemon</string>
             <string>run</string>
         </array>
-        <key>StandardErrorPath</key>
-        <string>/tmp/local.job.err</string>
-        <key>StandardOutPath</key>
-        <string>/tmp/local.job.out</string> 
     </dict>
 </plist>
