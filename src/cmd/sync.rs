@@ -77,7 +77,13 @@ pub async fn sync_keys(
     println!("Fetching from {}", config.environment.vault);
 
     let identity = IdentityClient::new(client, &config.environment.identity);
-    let mut token_manager = TokenManager::new(database, &identity, auth);
+    let mut token_manager = TokenManager::new(
+        database,
+        &identity,
+        auth.access_token.clone(),
+        &auth.refresh_token,
+        auth.expires_at,
+    );
 
     let access_token = token_manager.get_access_token().await?;
     let sync_result = bw_sync(client, config, access_token).await?;

@@ -1,5 +1,5 @@
 use crate::{
-    database::{AuthDto, Database},
+    database::Database,
     utils::get_current_unix_timestamp,
 };
 
@@ -9,7 +9,7 @@ pub struct TokenManager<'a> {
     db: &'a Database,
     identity: &'a IdentityClient<'a>,
     access_token: String,
-    refresh_token: String,
+    refresh_token: &'a str,
     expires_at: u64,
 }
 
@@ -20,20 +20,23 @@ impl<'a> TokenManager<'a> {
     pub fn new(
         db: &'a Database,
         identity: &'a IdentityClient<'a>,
-        auth: &'a AuthDto, // an initial auth to avoid fetching from the db twice
+        // an initial data known from auth to avoid fetching from the db twice
+        access_token: String,
+        refresh_token: &'a str,
+        expires_at: u64,
     ) -> Self {
         Self {
             db,
             identity,
-            access_token: auth.access_token.to_string(),
-            refresh_token: auth.refresh_token.to_string(),
-            expires_at: auth.expires_at,
+            access_token,
+            refresh_token,
+            expires_at,
         }
     }
 
     pub async fn get_access_token(&mut self) -> color_eyre::Result<&str> {
         if get_current_unix_timestamp() > self.expires_at - Self::TOKEN_RENEW_MARGIN_SECONDS {
-            let res = self.identity.renew_token(&self.refresh_token).await?;
+            let res = self.identity.renew_token(self.refresh_token).await?;
 
             self.access_token = res.access_token;
             self.expires_at = get_current_unix_timestamp() + res.expires_in;

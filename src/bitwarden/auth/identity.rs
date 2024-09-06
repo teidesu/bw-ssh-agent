@@ -1,4 +1,5 @@
 use color_eyre::eyre::eyre;
+use serde::de::DeserializeOwned;
 
 use super::identity_dto::{
     IdentityTokenRefreshResponse, IdentityTokenSuccessResponse, PasswordTokenRequest,
@@ -32,32 +33,23 @@ impl<'a> IdentityClient<'a> {
         self.identity_connect(req).await
     }
 
-    async fn identity_connect<Req: serde::Serialize, Res: for<'de> serde::Deserialize<'de>>(
+    async fn identity_connect<Req: serde::Serialize, Res: DeserializeOwned>(
         &self,
         request: Req,
     ) -> color_eyre::Result<Res> {
         let url = format!("{}/connect/token", self.base);
 
-        let body = serde_urlencoded::to_string(request)?;
-
         let response = self
             .client
             .post(url)
-            .header(
-                reqwest::header::CONTENT_TYPE,
-                "application/x-www-form-urlencoded; charset=utf-8",
-            )
+            .form(&request)
             .header(reqwest::header::ACCEPT, "application/json")
-            .body(body)
             .send()
             .await?
             .error_for_status()?
             .text()
             .await?;
 
-        serde_json::from_str::<Res>(&response).map_or_else(
-            |_| Err(eyre!("Unexpected response: {}", response)),
-            |r| Ok(r),
-        )
+        serde_json::from_str::<Res>(&response).map_err(|_| eyre!("Unexpected response: {response}"))
     }
 }
