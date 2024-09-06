@@ -51,6 +51,7 @@ impl<'a> IdentityClient<'a> {
             .body(body)
             .send()
             .await?
+            .error_for_status()?
             .text()
             .await?;
 
