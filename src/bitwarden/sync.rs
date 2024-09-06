@@ -81,6 +81,7 @@ pub async fn bw_sync(
         .header("Authorization", format!("Bearer {}", token))
         .send()
         .await?
+        .error_for_status()?
         .text()
         .await?;
 
