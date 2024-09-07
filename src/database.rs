@@ -16,7 +16,7 @@ pub struct AuthDto {
     pub vault_url: String,
     pub access_token: String,
     pub refresh_token: String,
-    pub expires_at: i64,
+    pub expires_at: u64,
     pub master_key: Vec<u8>,
     pub symmetric_key: Vec<u8>,
 }
@@ -84,7 +84,7 @@ impl Database {
         let vault_url: String = row.get(0)?;
         let access_token: String = row.get(1)?;
         let refresh_token: String = row.get(2)?;
-        let expires_at: i64 = row.get(3)?;
+        let expires_at: u64 = row.get(3)?;
         let master_key: Vec<u8> = row.get(4)?;
         let symmetric_key: Vec<u8> = row.get(5)?;
 
@@ -162,6 +162,15 @@ impl Database {
                 dto.master_key,
                 dto.symmetric_key
             ],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn update_auth(&self, access_token: &str, expires_at: u64) -> color_eyre::Result<()> {
+        self.conn.execute(
+            "UPDATE auth SET access_token = ?1, expires_at = ?2",
+            params![access_token, expires_at],
         )?;
 
         Ok(())

@@ -3,7 +3,10 @@ use rustyline::DefaultEditor;
 
 use crate::{
     bitwarden::{
-        auth::{bw_login, bw_prelogin, KdfType},
+        auth::{
+            identity::IdentityClient,
+            prelogin::{bw_prelogin, KdfType},
+        },
         config::bw_get_config,
         constants::{get_bw_http_client, BW_DEFAULT_VAULT_URL},
         crypto::{bw_decrypt_encstr, hkdf_expand_key, make_master_key, make_master_key_hash},
@@ -63,7 +66,10 @@ pub async fn cmd_login(database: Database, command: Commands) -> color_eyre::Res
     let master_key_hash = make_master_key_hash(&master_key, &password)?;
 
     println!("Logging in...");
-    let login_result = bw_login(&client, &config, &email, &master_key_hash).await?;
+
+    let identity = IdentityClient::new(&client, config.environment.identity.as_str());
+
+    let login_result = identity.password_login(&email, &master_key_hash).await?;
 
     if master_key.len() == 32 {
         master_key = hkdf_expand_key(&master_key)?.to_vec();

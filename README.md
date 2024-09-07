@@ -48,7 +48,6 @@ bw-ssh-agent daemon register
 - think of a way to avoid having to access tpm for every connection 
   - maybe temporarily store the decrypted symmetric key in memory?
 - improve bitwarden auth support (currently only pbkdf2 is supported, and 2fa is not supported)
-- implement refresh tokens for bitwarden
 - add support for other operating systems
 
 ## acknowledgements

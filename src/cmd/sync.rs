@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use crate::{
     bitwarden::{
+        auth::{identity::IdentityClient, token::TokenManager},
         config::{bw_get_config, ConfigResponseModel},
         constants::get_bw_http_client,
         crypto::bw_decrypt_encstr,
@@ -74,7 +75,18 @@ pub async fn sync_keys(
     auth: &AuthDto,
 ) -> color_eyre::Result<()> {
     println!("Fetching from {}", config.environment.vault);
-    let sync_result = bw_sync(client, config, &auth.access_token).await?;
+
+    let identity = IdentityClient::new(client, &config.environment.identity);
+    let mut token_manager = TokenManager::new(
+        database,
+        &identity,
+        auth.access_token.clone(),
+        &auth.refresh_token,
+        auth.expires_at,
+    );
+
+    let access_token = token_manager.get_access_token().await?;
+    let sync_result = bw_sync(client, config, access_token).await?;
 
     let secure_notes = sync_result
         .ciphers

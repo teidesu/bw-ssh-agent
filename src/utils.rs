@@ -1,6 +1,6 @@
-pub fn get_current_unix_timestamp() -> i64 {
+pub fn get_current_unix_timestamp() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
-        .as_secs() as i64
+        .as_secs()
 }
