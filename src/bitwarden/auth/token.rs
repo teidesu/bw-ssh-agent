@@ -1,7 +1,6 @@
-use crate::{
-    database::Database,
-    utils::get_current_unix_timestamp,
-};
+use color_eyre::eyre::eyre;
+
+use crate::{database::Database, utils::get_current_unix_timestamp};
 
 use super::identity::IdentityClient;
 
@@ -36,7 +35,8 @@ impl<'a> TokenManager<'a> {
 
     pub async fn get_access_token(&mut self) -> color_eyre::Result<&str> {
         if get_current_unix_timestamp() > self.expires_at - Self::TOKEN_RENEW_MARGIN_SECONDS {
-            let res = self.identity.renew_token(self.refresh_token).await?;
+            let res = self.identity.renew_token(self.refresh_token).await
+                .map_err(|e| eyre!("Error renewing the access token. Try logging in using \"bw-ssh-agent login\"{e}"))?;
 
             self.access_token = res.access_token;
             self.expires_at = get_current_unix_timestamp() + res.expires_in;
