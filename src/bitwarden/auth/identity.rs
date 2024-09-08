@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use color_eyre::eyre::eyre;
 use serde::de::DeserializeOwned;
 
@@ -9,11 +10,16 @@ use super::identity_dto::{
 pub struct IdentityClient<'a> {
     client: &'a reqwest::Client,
     base: &'a str,
+    email: &'a str,
 }
 
 impl<'a> IdentityClient<'a> {
-    pub fn new(client: &'a reqwest::Client, base: &'a str) -> Self {
-        Self { client, base }
+    pub fn new(client: &'a reqwest::Client, base: &'a str, email: &'a str) -> Self {
+        Self {
+            client,
+            base,
+            email,
+        }
     }
 
     pub async fn password_login(
@@ -44,6 +50,7 @@ impl<'a> IdentityClient<'a> {
             .post(url)
             .form(&request)
             .header(reqwest::header::ACCEPT, "application/json")
+            .header("Auth-Email", URL_SAFE_NO_PAD.encode(self.email))
             .send()
             .await?
             .error_for_status()?

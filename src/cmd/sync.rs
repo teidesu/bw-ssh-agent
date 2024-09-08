@@ -76,7 +76,7 @@ pub async fn sync_keys(
 ) -> color_eyre::Result<()> {
     println!("Fetching from {}", config.environment.vault);
 
-    let identity = IdentityClient::new(client, &config.environment.identity);
+    let identity = IdentityClient::new(client, &config.environment.identity, &auth.email);
     let mut token_manager = TokenManager::new(
         database,
         &identity,

@@ -63,7 +63,7 @@ async fn main() -> color_eyre::Result<()> {
     fs::create_dir_all(&*DATA_DIR)?;
 
     let database = Database::open()?;
-    
+
     match cli.command {
         Commands::Daemon { subcommand } => match subcommand {
             DaemonCommands::Run => cmd_daemon_run(database).await?,

@@ -19,6 +19,7 @@ pub struct AuthDto {
     pub expires_at: u64,
     pub master_key: Vec<u8>,
     pub symmetric_key: Vec<u8>,
+    pub email: String,
 }
 
 pub struct Database {
@@ -45,6 +46,11 @@ impl Database {
         if new_version == 1 {
             conn.execute_batch(include_str!("migrations/v2.sql"))?;
             new_version = 2;
+        }
+
+        if new_version == 2 {
+            conn.execute_batch(include_str!("migrations/v3.sql"))?;
+            new_version = 3;
         }
 
         if version != new_version {
@@ -81,20 +87,14 @@ impl Database {
     }
 
     fn map_auth(row: &rusqlite::Row<'_>) -> Result<AuthDto, rusqlite::Error> {
-        let vault_url: String = row.get(0)?;
-        let access_token: String = row.get(1)?;
-        let refresh_token: String = row.get(2)?;
-        let expires_at: u64 = row.get(3)?;
-        let master_key: Vec<u8> = row.get(4)?;
-        let symmetric_key: Vec<u8> = row.get(5)?;
-
         Ok(AuthDto {
-            vault_url,
-            access_token,
-            refresh_token,
-            expires_at,
-            master_key,
-            symmetric_key,
+            vault_url: row.get(0)?,
+            access_token: row.get(1)?,
+            refresh_token: row.get(2)?,
+            expires_at: row.get(3)?,
+            master_key: row.get(4)?,
+            symmetric_key: row.get(5)?,
+            email: row.get(6)?,
         })
     }
 
@@ -153,14 +153,15 @@ impl Database {
         // delete any existing auth first
         self.conn.execute("DELETE FROM auth", params![])?;
         self.conn.execute(
-            "INSERT INTO auth (vault_url, access_token, refresh_token, expires_at, master_key, symmetric_key) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO auth (vault_url, access_token, refresh_token, expires_at, master_key, symmetric_key, email) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
                 dto.vault_url,
                 dto.access_token,
                 dto.refresh_token,
                 dto.expires_at,
                 dto.master_key,
-                dto.symmetric_key
+                dto.symmetric_key,
+                dto.email
             ],
         )?;
 

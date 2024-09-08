@@ -67,7 +67,7 @@ pub async fn cmd_login(database: Database, command: Commands) -> color_eyre::Res
 
     println!("Logging in...");
 
-    let identity = IdentityClient::new(&client, config.environment.identity.as_str());
+    let identity = IdentityClient::new(&client, config.environment.identity.as_str(), &email);
 
     let login_result = identity.password_login(&email, &master_key_hash).await?;
 
@@ -94,6 +94,7 @@ pub async fn cmd_login(database: Database, command: Commands) -> color_eyre::Res
         expires_at: get_current_unix_timestamp() + login_result.expires_in,
         master_key: encrypted_master_key,
         symmetric_key: encrypted_symmetric_key,
+        email: email.to_string(),
     };
 
     database.set_auth(&auth)?;
