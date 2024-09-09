@@ -201,6 +201,7 @@ dependencies = [
  "directories",
  "hkdf",
  "hmac",
+ "objc2",
  "objc2-foundation",
  "objc2-service-management",
  "pbkdf2",

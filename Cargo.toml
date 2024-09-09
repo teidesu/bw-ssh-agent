@@ -40,6 +40,7 @@ bitflags = "2.6.0"
 rsa = { version = "0.9.6", features = ["sha2"] }
 objc2-service-management = { version = "0.2.2", features = ["std", "SMAppService"]}
 objc2-foundation = "0.2.2"
+objc2 = "0.5.2"
 
 [profile.release]
 lto = "fat"
